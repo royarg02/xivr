@@ -18,7 +18,7 @@ parent directory which can be browsed around.
 ## Runtime dependencies
 
 - [nsxiv][2] or the binary set in the `IMAGE_VIEWER` environment variable.
-- [util-linux][4]
+- [util-linux][4].
 
 ## Building and installation
 
@@ -27,7 +27,7 @@ parent directory which can be browsed around.
 
   ```shell
   $ cd xivr
-  $ dart compile exe bin/xivr.dart -o <INSTALL_LOCATION_PREFERABLY_IN_PATH>
+  $ dart compile exe bin/xivr.dart -o <INSTALL_LOCATION_PREFERABLY_IN_PATH>/xivr
   ```
 
 - Run the application:

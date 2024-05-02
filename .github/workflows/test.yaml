@@ -1,9 +1,11 @@
-name: Test
+name: Run tests
 
 on:
   push:
     branches:
       - master
+    paths:
+      - '**/*.dart'
   pull_request:
     types:
       - opened
@@ -11,6 +13,8 @@ on:
       - synchronize
     branches:
       - master
+    paths:
+      - '**/*.dart'
 
 jobs:
   test:
@@ -20,7 +24,7 @@ jobs:
       uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
     - name: Setup Dart
       uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
-    - name: Install app dependencies
+    - name: Get app dependencies
       run: dart pub get
     - name: Analyze
       run: dart analyze

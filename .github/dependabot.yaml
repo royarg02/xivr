@@ -8,3 +8,4 @@ updates:
     commit-message:
       prefix: "[Dependabot] "
       include: "scope"
+
