@@ -84,7 +84,7 @@ List<String> parseArguments({
   bool thumbnail = argResults.flag('thumbnail');
   List<String> paths = argResults.rest;
 
-  if (help) {
+  if (help || argResults.arguments.isEmpty) {
     printStdout(
       'Replace "$imageViewer" with "xivr" in the usage information below. '
       'For detailed help run "man $imageViewer".\n'

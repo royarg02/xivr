@@ -176,6 +176,25 @@ void main() {
       );
     });
 
+    test('displays additional help message when run without any arguments', () {
+      final List<String> testArguments = [];
+      final List<String> outputs = [];
+
+      IOOverrides.runZoned(
+        () {
+          testParseArguments(args: testArguments, filesystem: fakeFileSystem);
+          expect(
+            outputs.contains(
+              'Replace "nsxiv" with "xivr" in the usage information below. '
+              'For detailed help run "man nsxiv".\n'
+            ),
+            true,
+          );
+        },
+        stdout: () => FakeStdout(outputs: outputs),
+      );
+    });
+
     test('displays additional version message', () {
       final List<String> testArguments = [
         '--version',
