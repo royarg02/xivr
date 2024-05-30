@@ -15,38 +15,28 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'dart:io';
-import 'package:args/args.dart';
-import 'package:file/local.dart';
 import 'package:platform/platform.dart';
-import 'package:xivr/src/arg_parser.dart';
-import 'package:xivr/src/get_arguments.dart';
 import 'package:xivr/src/get_image_viewer.dart';
 
-void main(final List<String> args) async {
+void displayHelpMessage() {
   final String imageViewer = getImageViewer(const LocalPlatform());
+  final String helpMessage =
+    'Replace "$imageViewer" with "xivr" in the usage information below. '
+    'For detailed help run "man $imageViewer".\n';
 
-  final ArgParser parser = cliParser;
-  late final ArgResults argResults;
-  try {
-    argResults = parser.parse(args);
-  } on ArgParserException catch (exception) {
-    stdout.writeln(exception.message);
-    exit(1);
-  }
+  stdout.write(helpMessage);
+}
 
-  final List<String> arguments = getArguments(
-    filesystem: const LocalFileSystem(),
-    parser: parser,
-    results: argResults,
-  );
+void displayVersionMessage() {
+  // ignore: do_not_use_environment
+  const String xivrVersion = String.fromEnvironment('VERSION', defaultValue: 'undefined');
+  const String versionMessage = 'xivr $xivrVersion with ';
 
-  await Process.start(
-    'setsid',
-    [
-      '-f',
-      imageViewer,
-      ...arguments,
-    ],
-    mode: ProcessStartMode.inheritStdio,
-  );
+  stdout.write(versionMessage);
+}
+
+void displayInvalidImageViewerMessage(final String imageViewer) {
+  final String invalidImageViewerImage = 'Image viewer "$imageViewer" not found.\n';
+
+  stdout.write(invalidImageViewerImage);
 }

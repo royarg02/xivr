@@ -14,8 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import 'package:xivr/xivr.dart' as cli;
+import 'dart:convert';
+import 'dart:io';
 
-void main(final List<String> args) async {
-  cli.main(args);
+String readStdin({final Encoding encoding = systemEncoding}) {
+  final List<int> input = [];
+  while (true) {
+    final int byte = stdin.readByteSync();
+    if (byte < 0) {
+      break;
+    }
+    input.add(byte);
+  }
+  return encoding.decode(input);
 }

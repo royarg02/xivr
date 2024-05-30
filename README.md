@@ -17,8 +17,8 @@ parent directory which can be browsed around.
 
 ## Runtime dependencies
 
-- [nsxiv][2] or the binary set in the `IMAGE_VIEWER` environment variable.
 - [util-linux][4].
+- [nsxiv][2] or the binary set in the `IMAGE_VIEWER` environment variable.
 
 ## Building and installation
 
@@ -36,8 +36,29 @@ parent directory which can be browsed around.
   $ xivr
   ```
 
+## Caveats
+
+Users would still need to provide an empty argument to options supporting
+optional arguments due to no current support from the [package that this program
+uses][6].
+
+Instead of
+
+```bash
+$ xivr --alpha-layer --anti-alias
+$ xivr --alpha-layer=no --anti-alias=no
+```
+
+use
+
+```bash
+$ xivr --alpha-layer= --anti-alias=
+$ xivr --alpha-layer=no --anti-alias=no
+```
+
 [1]: https://dart.dev
 [2]: https://nsxiv.codeberg.page/
 [3]: https://github.com/xyb3rt/sxiv
 [4]: https://github.com/util-linux/util-linux
 [5]: https://dart.dev/get-dart
+[6]: https://github.com/dart-lang/args/issues/251

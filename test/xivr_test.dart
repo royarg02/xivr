@@ -15,57 +15,62 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'dart:io';
-
 import 'package:file/file.dart';
 import 'package:file/memory.dart';
 import 'package:platform/platform.dart';
 import 'package:test/test.dart';
-import 'package:xivr/xivr.dart' as xivr;
+import 'package:xivr/src/arg_parser.dart' as arg_parser;
+import 'package:xivr/src/get_arguments.dart';
+import 'package:xivr/src/get_image_viewer.dart';
 
-List<String> testParseArguments({
+List<String> testGetArguments({
   required final List<String> args,
   required final FileSystem filesystem,
-  final String? imageViewer,
   // ignore: prefer_expression_function_bodies
 }) {
-  return xivr.parseArguments(
-    args: args,
+  return getArguments(
     filesystem: filesystem,
-    platform: FakePlatform(
-      environment: <String, String>{
-        if (imageViewer != null) 'IMAGE_VIEWER' : imageViewer,
-      },
-    ),
+    parser: arg_parser.cliParser,
+    results: arg_parser.cliParser.parse(args),
   );
 }
 
+Future<void> testDoesCommandExist(final String _) => Future.value();
+
 void main() {
   late FileSystem fakeFileSystem;
+  late CommandExistenceCheckFunction commandExistenceTestFunction;
   setUp(() {
     fakeFileSystem = MemoryFileSystem();
+    commandExistenceTestFunction = testDoesCommandExist;
+  });
+
+  group('Image viewer', () {
+    test('defaults to nsxiv', () async {
+      expect(
+        getImageViewer(
+          FakePlatform(environment: {}),
+          commandExistenceTestFunction,
+        ),
+        'nsxiv',
+      );
+    });
+
+    test('uses environment variable to override', () async {
+      const String expected = 'abc';
+      expect(
+        getImageViewer(
+          FakePlatform(environment: {'IMAGE_VIEWER' : expected}),
+          commandExistenceTestFunction,
+        ),
+        expected,
+      );
+    });
   });
 
   group('Parsing arguments', () {
-    test('defaults to nsxiv as image viewer', () {
-      final List<String> expectedArguments = ['nsxiv'];
-      final List<String> determinedArguments = testParseArguments(
-        args: [],
-        filesystem: fakeFileSystem,
-      );
-      expect(determinedArguments, expectedArguments);
-    });
-
-    test('uses environment variable to override image viewer', () {
-      final List<String> expectedArguments = ['abc'];
-      final List<String> determinedArguments = testParseArguments(
-        args: [],
-        filesystem: MemoryFileSystem(),
-        imageViewer: 'abc',
-      );
-      expect(determinedArguments, expectedArguments);
-    });
-
     group('happens properly', () {
+      // --help and --version would ignore other provided options
       final List<String> testShortArguments = [
         '-A', '25',
         '-a',
@@ -75,7 +80,6 @@ void main() {
         '-f',
         '-G', '21',
         '-g', '1920x1080',
-        '-h',
         '-N', 'hello',
         '-n', '12',
         '-o',
@@ -85,7 +89,6 @@ void main() {
         '-S', '0.37',
         '-s', 'd',
         '-t',
-        '-v',
         '-Z',
         '-z', '85',
         '-0',
@@ -103,7 +106,6 @@ void main() {
         '--fullscreen',
         '--gamma', '21',
         '--geometry', '1920x1080',
-        '--help',
         '--class', 'hello',
         '--start-at', '12',
         '--stdout',
@@ -113,7 +115,6 @@ void main() {
         '--ss-delay', '0.37',
         '--scale-mode', 'd',
         '--thumbnail',
-        '--version',
         '--zoom-100',
         '--zoom', '85',
         '--null',
@@ -121,9 +122,9 @@ void main() {
         '--alpha-layer=no',
       ];
 
-      final List<String> expectedArguments = ['nsxiv', ...testShortArguments];
+      final List<String> expectedArguments = testShortArguments;
       test('short form', () {
-        final List<String> determinedArguments = testParseArguments(
+        final List<String> determinedArguments = testGetArguments(
           args: testShortArguments,
           filesystem: fakeFileSystem,
         );
@@ -131,7 +132,7 @@ void main() {
       });
 
       test('long form', () {
-        final List<String> determinedArguments = testParseArguments(
+        final List<String> determinedArguments = testGetArguments(
           args: testLongArguments,
           filesystem: fakeFileSystem,
         );
@@ -139,12 +140,26 @@ void main() {
       });
     });
 
-    test('non short form options are sent properly', () {
+    test('options with optional arguments are sent properly', () {
+      final List<String> testArguments = [
+        '--anti-alias=',
+        '--alpha-layer=',
+      ];
+      final List<String> determinedArguments = testGetArguments(
+        args: testArguments,
+        filesystem: fakeFileSystem,
+      );
+
+      expect(determinedArguments.contains('--anti-alias'), true);
+      expect(determinedArguments.contains('--alpha-layer'), true);
+    });
+
+    test('options with optional arguments are sent properly with arguments', () {
       final List<String> testArguments = [
         '--anti-alias', 'abc',
         '--alpha-layer', 'xyz',
       ];
-      final List<String> determinedArguments = testParseArguments(
+      final List<String> determinedArguments = testGetArguments(
         args: testArguments,
         filesystem: fakeFileSystem,
       );
@@ -162,7 +177,7 @@ void main() {
 
       IOOverrides.runZoned(
         () {
-          testParseArguments(args: testArguments, filesystem: fakeFileSystem);
+          testGetArguments(args: testArguments, filesystem: fakeFileSystem);
           expect(
             outputs.contains(
               'Replace "nsxiv" with "xivr" in the usage information below. '
@@ -182,7 +197,7 @@ void main() {
 
       IOOverrides.runZoned(
         () {
-          testParseArguments(args: testArguments, filesystem: fakeFileSystem);
+          testGetArguments(args: testArguments, filesystem: fakeFileSystem);
           expect(
             outputs.contains(
               'Replace "nsxiv" with "xivr" in the usage information below. '
@@ -203,8 +218,9 @@ void main() {
 
       IOOverrides.runZoned(
         () {
-          testParseArguments(args: testArguments, filesystem: fakeFileSystem);
-          expect(outputs.contains('xivr with '), true);
+          testGetArguments(args: testArguments, filesystem: fakeFileSystem);
+          // version is undefined by default
+          expect(outputs.contains('xivr undefined with '), true);
         },
         stdout: () => FakeStdout(outputs: outputs),
       );
@@ -218,7 +234,7 @@ void main() {
         '-n', initialPosition,
         validFile.path,
       ];
-      final List<String> determinedArguments = testParseArguments(
+      final List<String> determinedArguments = testGetArguments(
         args: testArguments,
         filesystem: fakeFileSystem,
       );
@@ -233,7 +249,7 @@ void main() {
         '-n', initialPosition,
         testDirectory.path,
       ];
-      final List<String> determinedArguments = testParseArguments(
+      final List<String> determinedArguments = testGetArguments(
         args: testArguments,
         filesystem: fakeFileSystem,
       );
@@ -250,7 +266,7 @@ void main() {
         validFile1.path,
         validFile2.path,
       ];
-      final List<String> determinedArguments = testParseArguments(
+      final List<String> determinedArguments = testGetArguments(
         args: testArguments,
         filesystem: fakeFileSystem,
       );
@@ -267,7 +283,7 @@ void main() {
         '--alpha-layer=no',
         invalidFile.path,
       ];
-      final List<String> determinedArguments = testParseArguments(
+      final List<String> determinedArguments = testGetArguments(
         args: testArguments,
         filesystem: fakeFileSystem,
       );
@@ -286,7 +302,7 @@ void main() {
         testDirectory.path,
         testFile.path,
       ];
-      final List<String> determinedArguments = testParseArguments(
+      final List<String> determinedArguments = testGetArguments(
         args: testArguments,
         filesystem: fakeFileSystem,
       );
@@ -306,7 +322,7 @@ void main() {
       IOOverrides.runZoned(
         () {
           for (final List<String> arguments in testArgumentsList) {
-            final List<String> determinedArguments = testParseArguments(
+            final List<String> determinedArguments = testGetArguments(
               args: arguments,
               filesystem: MemoryFileSystem(),
             );
@@ -328,7 +344,7 @@ void main() {
       IOOverrides.runZoned(
         () {
           expect(fakeStdinInputs.isEmpty, false);
-          testParseArguments(
+          testGetArguments(
             args: testArguments,
             filesystem: MemoryFileSystem(),
           );
@@ -349,7 +365,7 @@ void main() {
       IOOverrides.runZoned(
         () {
           expect(fakeStdinInputs.isEmpty, false);
-          testParseArguments(
+          testGetArguments(
             args: testArguments,
             filesystem: MemoryFileSystem(),
           );
@@ -361,7 +377,7 @@ void main() {
 
     test('properly handles multiple arguments', () {
       final List<int> fakeStdinInputs = [65, 10, 66, 10, 67, -1];
-      final List<String> expectedArguments = ['nsxiv', 'A', 'B', 'C'];
+      final List<String> expectedArguments = ['A', 'B', 'C'];
       final List<String> testArguments= [
         '-',
       ];
@@ -369,7 +385,7 @@ void main() {
       IOOverrides.runZoned(
         () {
           expect(fakeStdinInputs.isEmpty, false);
-          final List<String> determinedArguments = testParseArguments(
+          final List<String> determinedArguments = testGetArguments(
             args: testArguments,
             filesystem: MemoryFileSystem(),
           );
@@ -391,7 +407,7 @@ void main() {
       IOOverrides.runZoned(
         () {
           expect(fakeStdinInputs.isEmpty, false);
-          final List<String> determinedArguments = testParseArguments(
+          final List<String> determinedArguments = testGetArguments(
             args: testArguments,
             filesystem: fakeFileSystem,
           );
@@ -415,7 +431,7 @@ void main() {
         testFile1.path,
         testFile2.path,
       ];
-      final List<String> determinedFiles = xivr.getSupportedFiles(
+      final List<String> determinedFiles = getSupportedFiles(
         paths: testFiles,
         filesystem: fakeFileSystem,
       );
@@ -433,7 +449,7 @@ void main() {
       final List<String> testFiles = [
         testDirectory.path,
       ];
-      final List<String> determinedFiles = xivr.getSupportedFiles(
+      final List<String> determinedFiles = getSupportedFiles(
         paths: testFiles,
         filesystem: fakeFileSystem,
       );
@@ -455,7 +471,7 @@ void main() {
       final List<String> testFiles = [
         testDirectory.path,
       ];
-      final List<String> determinedFiles = xivr.getSupportedFiles(
+      final List<String> determinedFiles = getSupportedFiles(
         paths: testFiles,
         filesystem: fakeFileSystem,
         recursive: true,
@@ -466,27 +482,27 @@ void main() {
   });
 
   test('pathHasImgExtension determines img files correctly using extension', () {
-    expect(xivr.pathHasImgExtension(path: 'image.png'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.PNG'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.PNG.png'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.jpeg'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.jpg'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.gif'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.svg'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.jxl'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.webp'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.tiff'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.heif'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.avif'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.ico'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.bmp'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.pam'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.pbm'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.ppm'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.tga'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.qoi'), true);
-    expect(xivr.pathHasImgExtension(path: 'image.ff'), true);
-    expect(xivr.pathHasImgExtension(path: 'image'), false);
+    expect(pathHasImgExtension('image.png'), true);
+    expect(pathHasImgExtension('image.PNG'), true);
+    expect(pathHasImgExtension('image.PNG.png'), true);
+    expect(pathHasImgExtension('image.jpeg'), true);
+    expect(pathHasImgExtension('image.jpg'), true);
+    expect(pathHasImgExtension('image.gif'), true);
+    expect(pathHasImgExtension('image.svg'), true);
+    expect(pathHasImgExtension('image.jxl'), true);
+    expect(pathHasImgExtension('image.webp'), true);
+    expect(pathHasImgExtension('image.tiff'), true);
+    expect(pathHasImgExtension('image.heif'), true);
+    expect(pathHasImgExtension('image.avif'), true);
+    expect(pathHasImgExtension('image.ico'), true);
+    expect(pathHasImgExtension('image.bmp'), true);
+    expect(pathHasImgExtension('image.pam'), true);
+    expect(pathHasImgExtension('image.pbm'), true);
+    expect(pathHasImgExtension('image.ppm'), true);
+    expect(pathHasImgExtension('image.tga'), true);
+    expect(pathHasImgExtension('image.qoi'), true);
+    expect(pathHasImgExtension('image.ff'), true);
+    expect(pathHasImgExtension('image'), false);
   });
 }
 
