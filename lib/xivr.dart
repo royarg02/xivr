@@ -38,6 +38,7 @@ void main(final List<String> args) async {
     filesystem: const LocalFileSystem(),
     parser: parser,
     results: argResults,
+    imageViewer: imageViewer,
   );
 
   await Process.start(

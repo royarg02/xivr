@@ -23,6 +23,7 @@ List<String> getArguments({
   required final FileSystem filesystem,
   required final ArgParser parser,
   required final ArgResults results,
+  required final String imageViewer,
 }) {
   const String helpOptionName = 'help';
   const String versionOptionName = 'version';
@@ -36,7 +37,7 @@ List<String> getArguments({
   final Map<String, String> optionsOverrides = {};
 
   if (parsedOptions.contains(helpOptionName) || results.arguments.isEmpty) {
-    displayHelpMessage();
+    displayHelpMessage(imageViewer);
     return regenerateOptions([helpOptionName], parser, results);
   }
 

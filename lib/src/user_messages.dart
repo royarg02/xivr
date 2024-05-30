@@ -15,11 +15,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'dart:io';
-import 'package:platform/platform.dart';
-import 'package:xivr/src/get_image_viewer.dart';
 
-void displayHelpMessage() {
-  final String imageViewer = getImageViewer(const LocalPlatform());
+void displayHelpMessage(final String imageViewer) {
   final String helpMessage =
     'Replace "$imageViewer" with "xivr" in the usage information below. '
     'For detailed help run "man $imageViewer".\n';

@@ -1,4 +1,8 @@
 <!-- markdownlint-disable-file MD041 -->
+## 1.1.1
+
+- Fix tests for CI.
+
 ## 1.1.0
 
 - Fix error for options with optional arguments, with some caveats.

@@ -32,6 +32,8 @@ List<String> testGetArguments({
     filesystem: filesystem,
     parser: arg_parser.cliParser,
     results: arg_parser.cliParser.parse(args),
+    // image viewer is nsxiv by default
+    imageViewer: 'nsxiv',
   );
 }
 

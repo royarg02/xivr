@@ -1,6 +1,6 @@
 name: xivr
 description: X Image Viewer Rifle - wrapper for *sxiv with nice features
-version: 1.1.0
+version: 1.1.1
 repository: https://github.com/royarg02/xivr
 
 environment:
