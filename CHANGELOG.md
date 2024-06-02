@@ -1,4 +1,9 @@
 <!-- markdownlint-disable-file MD041 -->
+## 1.1.2
+
+- Fix missing position when it is not given and a supported file is provided
+among multiple supported files.
+
 ## 1.1.1
 
 - Fix tests for CI.

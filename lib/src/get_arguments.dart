@@ -71,6 +71,7 @@ List<String> getArguments({
         filesystem: filesystem,
       );
       final int startAt = paths.indexOf(file.absolute.path) + 1;
+      parsedOptions.add(startAtOptionName);
       optionsOverrides.addAll({
         startAtOptionName : startAt.toString(),
       });

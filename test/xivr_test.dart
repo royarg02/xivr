@@ -244,6 +244,21 @@ void main() {
       expect(determinedArguments[indexOfStartAt] != initialPosition, true);
     });
 
+    test('adds position when not given and a file is given among multiple supported files', () {
+      fakeFileSystem.file('/image1.png').createSync();
+      final File validFile = fakeFileSystem.file('/image2.png')..createSync();
+      fakeFileSystem.file('/image3.png').createSync();
+      final List<String> testArguments = [
+        validFile.path,
+      ];
+      final List<String> determinedArguments = testGetArguments(
+        args: testArguments,
+        filesystem: fakeFileSystem,
+      );
+      expect(testArguments.contains('-n'), false);
+      expect(determinedArguments.contains('-n'), true);
+    });
+
     test('does not ignore provided position when a directory is given', () {
       final String initialPosition = 12.toString();
       final Directory testDirectory = fakeFileSystem.directory('/testDirectory')..createSync();
