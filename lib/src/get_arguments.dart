@@ -31,6 +31,7 @@ List<String> getArguments({
   const String startAtOptionName = 'start-at';
   const String stdinOptionName = 'stdin';
   const String thumbnailOptionName = 'thumbnail';
+  const String thumbnailFlagName = 'enable-thumbnail';
 
   List<String> paths = List.from(results.rest);
   final List<String> parsedOptions = results.options.where(results.wasParsed).toList();
@@ -55,8 +56,11 @@ List<String> getArguments({
     ]..remove('-');
   }
 
-  if (paths.any(filesystem.isDirectorySync)) {
-    parsedOptions.add(thumbnailOptionName);
+  if (!(parsedOptions.contains(thumbnailFlagName) || parsedOptions.contains(thumbnailOptionName))) {
+    if (paths.any(filesystem.isDirectorySync)) {
+      // Prefer short form for turning on thumbnail mode
+      parsedOptions.add(thumbnailFlagName);
+    }
   }
 
   if (paths.length == 1 && filesystem.isFileSync(paths[0])) {
@@ -100,6 +104,7 @@ List<String> regenerateOptions(
   const List<String> optionalArgumentOptionNames = [
     'alpha-layer',
     'anti-alias',
+    'thumbnail',
   ];
 
   final List<String> regeneratedOptions = [];
@@ -113,7 +118,7 @@ List<String> regenerateOptions(
                     : results.option(parsedOption);
     }
     if (optionalArgumentOptionNames.contains(parsedOption)) {
-      if((optionValue as String).isNotEmpty) {
+      if (optionValue.toString().isNotEmpty) {
         optionArgument = '$optionArgument=$optionValue';
       }
       optionValue = null;
@@ -144,7 +149,7 @@ List<String> getSupportedFiles({
       .map((final entity) => entity.absolute.path)
       .where(pathHasImgExtension)
       .toList()
-    ..sort((final a, final b) => a.compareTo(b));
+    ..sort(filepathComparator);
 
   return supportedEntitiesPaths;
 }
@@ -155,3 +160,33 @@ bool pathHasImgExtension(final String path) => path.contains(
     caseSensitive: false,
   ),
 );
+
+int filepathComparator(final String a, final String b) {
+  const int lowerCaseA = 0x61;
+  const int lowerCaseZ = 0x7a;
+  const int asciiCaseBit = 0x20;
+  for (int i = 0; i < a.length; ++i) {
+    if (i >= b.length) {
+      return 1;
+    }
+    int aChar = a.codeUnitAt(i);
+    int bChar = b.codeUnitAt(i);
+
+    if (lowerCaseA <= bChar && bChar <= lowerCaseZ) {
+      bChar -= asciiCaseBit;
+    }
+    if (lowerCaseA <= aChar && aChar <= lowerCaseZ) {
+      aChar -= asciiCaseBit;
+    }
+
+    if (aChar == bChar) {
+      continue;
+    } else {
+      return (aChar - bChar).sign;
+    }
+  }
+  if (a.length < b.length) {
+    return -1;
+  }
+  return 0;
+}

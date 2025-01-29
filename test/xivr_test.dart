@@ -95,8 +95,12 @@ void main() {
         '-z', '85',
         '-0',
         // these don't have short form equivalents
+        '--bar',
         '--anti-alias=no',
         '--alpha-layer=no',
+        '--thumbnail=no',
+        '--cache-allow', 'jkl',
+        '--cache-deny', 'xyz',
       ];
 
       final List<String> testLongArguments = [
@@ -108,7 +112,7 @@ void main() {
         '--fullscreen',
         '--gamma', '21',
         '--geometry', '1920x1080',
-        '--class', 'hello',
+        '--name', 'hello',
         '--start-at', '12',
         '--stdout',
         '--private',
@@ -116,12 +120,17 @@ void main() {
         '--recursive',
         '--ss-delay', '0.37',
         '--scale-mode', 'd',
-        '--thumbnail',
+        // xivr specific
+        '--enable-thumbnail',
         '--zoom-100',
         '--zoom', '85',
         '--null',
+        '--bar',
         '--anti-alias=no',
         '--alpha-layer=no',
+        '--thumbnail=no',
+        '--cache-allow', 'jkl',
+        '--cache-deny', 'xyz',
       ];
 
       final List<String> expectedArguments = testShortArguments;
@@ -146,6 +155,7 @@ void main() {
       final List<String> testArguments = [
         '--anti-alias=',
         '--alpha-layer=',
+        '--thumbnail=',
       ];
       final List<String> determinedArguments = testGetArguments(
         args: testArguments,
@@ -154,12 +164,14 @@ void main() {
 
       expect(determinedArguments.contains('--anti-alias'), true);
       expect(determinedArguments.contains('--alpha-layer'), true);
+      expect(determinedArguments.contains('--thumbnail'), true);
     });
 
     test('options with optional arguments are sent properly with arguments', () {
       final List<String> testArguments = [
         '--anti-alias', 'abc',
         '--alpha-layer', 'xyz',
+        '--thumbnail', 'jkl',
       ];
       final List<String> determinedArguments = testGetArguments(
         args: testArguments,
@@ -168,6 +180,7 @@ void main() {
 
       expect(determinedArguments.contains('--anti-alias=abc'), true);
       expect(determinedArguments.contains('--alpha-layer=xyz'), true);
+      expect(determinedArguments.contains('--thumbnail=jkl'), true);
     });
 
     test('displays additional help message and takes priority over version', () {
@@ -325,6 +338,22 @@ void main() {
       );
       expect(testArguments.contains('-t'), false);
       expect(determinedArguments.contains('-t'), true);
+      expect(determinedArguments.contains('--thumbnail'), false);
+    });
+
+    test('disables thumbnail mode when explicitly told to', () {
+      final Directory testDirectory = fakeFileSystem.directory('/testDirectory')..createSync();
+      final List<String> testArguments = [
+        '--thumbnail=no',
+        testDirectory.path,
+      ];
+      final List<String> determinedArguments = testGetArguments(
+        args: testArguments,
+        filesystem: fakeFileSystem,
+      );
+      expect(testArguments.contains('-t'), false);
+      expect(determinedArguments.contains('-t'), false);
+      expect(determinedArguments.contains('--thumbnail=no'), true);
     });
   });
 
@@ -520,6 +549,14 @@ void main() {
     expect(pathHasImgExtension('image.qoi'), true);
     expect(pathHasImgExtension('image.ff'), true);
     expect(pathHasImgExtension('image'), false);
+  });
+
+  test('filepathComparator compares file names correctly', () {
+    expect(filepathComparator('image.png', 'Image.png'), 0);
+    expect(filepathComparator('abcde','abd'), -1);
+    expect(filepathComparator('abcd','Acde'), -1);
+    expect(filepathComparator('abcd','abbbb'), 1);
+    expect(filepathComparator('abc',''), 1);
   });
 }
 

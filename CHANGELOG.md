@@ -1,4 +1,17 @@
 <!-- markdownlint-disable-file MD041 -->
+## 1.2.0
+
+- Supports `nsxiv` v33.
+  - Adds `bar` flag, `-b` still implies `--no-bar`.
+  - Supports new `cache-allow` and `cache-deny` options.
+  - Renames `class` option to `name` with the shorthand unchanged.
+  - `thumbnail` is now an option accepting an optional `no` as argument. As such
+  same [caveats](https://github.com/royarg02/xivr#caveats) now apply.
+  - The flag with `-t` shorthand is now named `enable-thumbnail`. This is
+  **xivr** only, as the parser doesn't support flags without names.
+- Files are now ordered case-insensitively.
+- Bumps Dart SDK to `3.6.0`.
+
 ## 1.1.2
 
 - Fix missing position when it is not given and a supported file is provided
